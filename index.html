@@ -3,15 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulsePay - Modern Payment Solution</title>
+    <title>PulsePay - Global Payment Solution</title>
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
+    <!-- AUTH & ONBOARDING WRAPPER -->
+    <div id="auth-container" class="auth-wrapper">
+        <!-- Onboarding Screen -->
+        <div id="onboarding-screen" class="auth-card">
+            <div class="brand-center"><i class="fa-solid fa-bolt-lightning"></i><h2>PulsePay</h2></div>
+            <h3>Global Payments Made Simple</h3>
+            <p class="sub-text">Send, receive, and manage multi-currency transactions securely anywhere in the world.</p>
+            <button class="btn-primary" onclick="showScreen('signup-screen')">Get Started</button>
+            <p class="switch-text">Already have an account? <a href="#" onclick="showScreen('login-screen')">Log In</a></p>
+        </div>
+
+        <!-- Signup Screen -->
+        <div id="signup-screen" class="auth-card" style="display: none;">
+            <div class="brand-center"><i class="fa-solid fa-bolt-lightning"></i><h2>PulsePay</h2></div>
+            <h3>Create Your Account</h3>
+            <form id="signup-form">
+                <div class="form-group"><label>Full Name</label><input type="text" id="signup-name" required></div>
+                <div class="form-group"><label>Email Address</label><input type="email" id="signup-email" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="signup-password" required></div>
+                <button type="submit" class="btn-primary">Sign Up</button>
+            </form>
+            <p class="switch-text">Already registered? <a href="#" onclick="showScreen('login-screen')">Log In</a></p>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="auth-card" style="display: none;">
+            <div class="brand-center"><i class="fa-solid fa-bolt-lightning"></i><h2>PulsePay</h2></div>
+            <h3>Welcome Back</h3>
+            <form id="login-form">
+                <div class="form-group"><label>Email Address</label><input type="email" id="login-email" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="login-password" required></div>
+                <button type="submit" class="btn-primary">Log In</button>
+            </form>
+            <p class="switch-text">Don't have an account? <a href="#" onclick="showScreen('signup-screen')">Sign Up</a></p>
+        </div>
+    </div>
+
+    <!-- MAIN APP DASHBOARD (Hidden until logged in) -->
+    <div id="app-dashboard" class="app-container" style="display: none;">
         <aside class="sidebar">
             <div class="brand">
                 <i class="fa-solid fa-bolt-lightning"></i>
@@ -24,11 +60,11 @@
                 <li data-target="settings-section"><i class="fa-solid fa-gear"></i> Settings</li>
             </ul>
             <div class="sidebar-footer">
-                <p>Logged in as <br><strong>John (Analyst)</strong></p>
+                <p>Logged in as <br><strong id="user-display-name">User</strong></p>
+                <a href="#" onclick="logout()" class="logout-link">Log Out</a>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
             <header>
                 <div class="header-title">
@@ -36,84 +72,52 @@
                     <p>Welcome back, manage your cash flow seamlessly.</p>
                 </div>
                 <div class="user-profile">
-                    <i class="fa-regular fa-bell notification-icon"></i>
-                    <div class="avatar">JO</div>
+                    <select id="currency-selector" onchange="changeCurrency(this.value)">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="NGN">NGN (₦)</option>
+                        <option value="JPY">JPY (¥)</option>
+                    </select>
+                    <div class="avatar" id="user-avatar-initials">JP</div>
                 </div>
             </header>
 
-            <!-- SECTION: Dashboard -->
             <section id="dashboard-section" class="content-section active">
                 <div class="stats-grid">
                     <div class="stat-card">
                         <p>Total Balance</p>
-                        <h2 id="total-balance">$24,580.50</h2>
-                        <span class="badge positive">+12.4% this month</span>
-                    </div>
-                    <div class="stat-card">
-                        <p>Incoming (This Week)</p>
-                        <h2 id="incoming-amount">$4,250.00</h2>
-                        <span class="badge positive">+4 transactions</span>
-                    </div>
-                    <div class="stat-card">
-                        <p>Outgoing (This Week)</p>
-                        <h2 id="outgoing-amount">$1,120.00</h2>
-                        <span class="badge negative">-2 transactions</span>
+                        <h2 id="total-balance">$0.00</h2>
+                        <span class="badge positive">Active Account</span>
                     </div>
                 </div>
-
                 <div class="dashboard-grid">
                     <div class="card quick-action-card">
                         <h3>Quick Transfer</h3>
                         <form id="quick-transfer-form">
-                            <div class="form-group">
-                                <label>Recipient Email or ID</label>
-                                <input type="text" id="quick-recipient" placeholder="name@domain.com" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Amount ($)</label>
-                                <input type="number" id="quick-amount" placeholder="0.00" step="0.01" required>
-                            </div>
+                            <div class="form-group"><label>Recipient</label><input type="text" id="quick-recipient" required></div>
+                            <div class="form-group"><label>Amount</label><input type="number" id="quick-amount" step="0.01" required></div>
                             <button type="submit" class="btn-primary">Pay Now</button>
                         </form>
                     </div>
-
                     <div class="card recent-activity-card">
-                        <h3>Recent Pulse Activity</h3>
-                        <ul id="mini-transaction-list" class="mini-list">
-                            <!-- Populated dynamically via app.js -->
-                        </ul>
+                        <h3>Recent Activity</h3>
+                        <ul id="mini-transaction-list" class="mini-list"></ul>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION: Send Money -->
             <section id="send-section" class="content-section">
                 <div class="card form-card">
                     <h3>Make a Secure Payment</h3>
-                    <p class="sub-text">Transfer funds instantly to any bank account or PulsePay user worldwide.</p>
                     <form id="send-money-form">
-                        <div class="form-group">
-                            <label>Recipient Name / Business</label>
-                            <input type="text" id="send-name" placeholder="e.g. Acme Corp" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Destination Account / Identifier</label>
-                            <input type="text" id="send-account" placeholder="Account Number or Email" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Amount ($)</label>
-                            <input type="number" id="send-amount" placeholder="50.00" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Reference Note</label>
-                            <input type="text" id="send-note" placeholder="What is this for? (optional)">
-                        </div>
-                        <button type="submit" class="btn-primary">Authorize Transfer</button>
+                        <div class="form-group"><label>Recipient Name</label><input type="text" id="send-name" required></div>
+                        <div class="form-group"><label>Amount</label><input type="number" id="send-amount" step="0.01" required></div>
+                        <button type="submit" class="btn-primary">Send Payment</button>
                     </form>
                 </div>
             </section>
 
-            <!-- SECTION: Transactions History -->
             <section id="transactions-section" class="content-section">
                 <div class="card table-card">
                     <div class="table-header">
@@ -123,21 +127,14 @@
                     <div class="table-responsive">
                         <table>
                             <thead>
-                                Ref ID
-                                <th>Receiver / Sender</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <tr><th>Ref ID</th><th>Receiver / Sender</th><th>Amount</th><th>Status</th><th>Date</th></tr>
                             </thead>
-                            <tbody id="full-transaction-tbody">
-                                <!-- Populated dynamically -->
-                            </tbody>
+                            <tbody id="full-transaction-tbody"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION: Settings -->
             <section id="settings-section" class="content-section">
                 <div class="card">
                     <h3>Gateway Configuration</h3>
