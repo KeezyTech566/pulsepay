@@ -72,14 +72,15 @@
                     <p>Welcome back, manage your cash flow seamlessly.</p>
                 </div>
                 <div class="user-profile">
-                    <select id="currency-selector" onchange="changeCurrency(this.value)">
+                    <select id="currency-selector">
                         <option value="USD">USD ($)</option>
                         <option value="EUR">EUR (€)</option>
                         <option value="GBP">GBP (£)</option>
-                        <option value="NGN">NGN (₦)</option>
+                        <option value="NGN" selected>NGN (₦)</option>
                         <option value="JPY">JPY (¥)</option>
                     </select>
-                    <div class="avatar" id="user-avatar-initials">JP</div>
+                    <button class="btn-secondary" id="currency-ok-btn" style="padding: 6px 12px; height: 38px;">OK</button>
+                    <div class="avatar" id="user-avatar-initials">OK</div>
                 </div>
             </header>
 
