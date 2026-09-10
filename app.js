@@ -5,9 +5,9 @@ let state = {
         'USD': '$', 'EUR': '€', 'GBP': '£', 'NGN': '₦', 
         'JPY': '¥', 'CAD': 'CA$', 'AUD': 'AU$', 'INR': '₹'
     },
-    balance: 24580.50,
-    incoming: 4250.00,
-    outgoing: 1120.00,
+    balance: 0.00,
+    incoming: 0.00,
+    outgoing: 0.00,
     transactions: []
 };
 
@@ -87,30 +87,26 @@ async function fetchTransactions() {
     try {
         const response = await fetch('http://127.0.0.1:5000/api/transactions');
         const data = await response.json();
-        if (data.length > 0) {
+        if (data && data.length > 0) {
             state.transactions = data;
             recalculateMetrics();
         } else {
-            // Seed initial data if empty
-            seedInitialData();
+            state.transactions = [];
+            recalculateMetrics();
         }
     } catch (err) {
-        console.warn("Backend offline, using local memory state.");
-        seedInitialData();
+        console.warn("Backend offline, using clean local state.");
+        state.transactions = [];
+        recalculateMetrics();
     }
     renderDashboard();
     renderTransactions();
 }
 
-function seedInitialData() {
-    state.transactions = [
-        { id: "TXN-9842", name: "Stripe Payout", amount: 1500.00, currency: "USD", type: "incoming", date: "Sep 09, 2026" },
-        { id: "TXN-9841", name: "AWS Cloud Services", amount: 120.00, currency: "USD", type: "outgoing", date: "Sep 08, 2026" }
-    ];
-}
-
 function recalculateMetrics() {
-    state.balance = state.transactions.reduce((acc, tx) => tx.type === 'incoming' ? acc + tx.amount : acc - tx.amount, 24580.50);
+    state.balance = state.transactions.reduce((acc, tx) => {
+        return tx.type === 'incoming' ? acc + tx.amount : acc - tx.amount;
+    }, 0.00);
 }
 
 // Chart.js Analytics Integration
@@ -122,7 +118,7 @@ function initChart() {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [{
                 label: 'Transaction Volume',
-                data: [1200, 2100, 800, 1500, 4250, 1120, 3100],
+                data: [0, 0, 0, 0, 0, 0, 0],
                 backgroundColor: '#6366f1',
                 borderRadius: 6
             }]
@@ -155,6 +151,11 @@ function renderDashboard() {
     const miniList = document.getElementById("mini-transaction-list");
     miniList.innerHTML = "";
 
+    if (state.transactions.length === 0) {
+        miniList.innerHTML = `<li class="mini-item"><span>No recent activity yet. Top up to start!</span></li>`;
+        return;
+    }
+
     state.transactions.slice(0, 4).forEach(tx => {
         const isIncoming = tx.type === "incoming";
         const txSymbol = state.currencySymbols[tx.currency] || getSymbol();
@@ -172,6 +173,12 @@ function renderDashboard() {
 function renderTransactions(filterText = "") {
     const tbody = document.getElementById("full-transaction-tbody");
     tbody.innerHTML = "";
+
+    if (state.transactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No transactions found. Top up or make a transfer to get started.</td></tr>`;
+        return;
+    }
+
     state.transactions.filter(tx => tx.name.toLowerCase().includes(filterText.toLowerCase())).forEach(tx => {
         const isIncoming = tx.type === "incoming";
         const txSymbol = state.currencySymbols[tx.currency] || getSymbol();
@@ -189,16 +196,20 @@ function renderTransactions(filterText = "") {
 }
 
 function setupForms() {
-    const handleTransfer = async (name, amountStr) => {
+    const processTransaction = async (name, amountStr, type) => {
         const amount = parseFloat(amountStr);
-        if (isNaN(amount) || amount <= 0) return alert("Invalid amount.");
+        if (isNaN(amount) || amount <= 0) return alert("Please enter a valid amount.");
+
+        if (type === 'outgoing' && amount > state.balance) {
+            return alert("Insufficient balance! Please top up your account first.");
+        }
 
         const newTx = {
             id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
             name: name,
             amount: amount,
             currency: state.currentCurrency,
-            type: "outgoing",
+            type: type,
             date: "Today"
         };
 
@@ -213,20 +224,54 @@ function setupForms() {
         recalculateMetrics();
         renderDashboard();
         renderTransactions();
-        alert(`Payment of ${formatMoney(amount)} processed successfully!`);
+        alert(`${type === 'incoming' ? 'Deposit' : 'Payment'} of ${formatMoney(amount)} processed successfully!`);
     };
 
     document.getElementById("quick-transfer-form").addEventListener("submit", (e) => {
         e.preventDefault();
-        handleTransfer(document.getElementById("quick-recipient").value, document.getElementById("quick-amount").value);
+        processTransaction(
+            document.getElementById("quick-recipient").value, 
+            document.getElementById("quick-amount").value, 
+            "outgoing"
+        );
         e.target.reset();
     });
 
-    document.getElementById("send-money-form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        handleTransfer(document.getElementById("send-name").value, document.getElementById("send-amount").value);
-        e.target.reset();
-    });
+    const sendMoneyForm = document.getElementById("send-money-form");
+    if (sendMoneyForm) {
+        sendMoneyForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            processTransaction(
+                document.getElementById("send-name").value, 
+                document.getElementById("send-amount").value, 
+                "outgoing"
+            );
+            e.target.reset();
+        });
+    }
+
+    const depositForm = document.getElementById("deposit-form");
+    if (depositForm) {
+        depositForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            processTransaction(
+                document.getElementById("deposit-source").value, 
+                document.getElementById("deposit-amount").value, 
+                "incoming"
+            );
+            e.target.reset();
+        });
+    }
+
+    // Currency OK button setup
+    const currencyOkBtn = document.getElementById("currency-ok-btn");
+    if (currencyOkBtn) {
+        currencyOkBtn.addEventListener("click", () => {
+            const selectedCurrency = document.getElementById("currency-selector").value;
+            changeCurrency(selectedCurrency);
+            alert(`Currency updated to ${selectedCurrency}`);
+        });
+    }
 
     // Search filter handling
     const searchInput = document.getElementById("search-transactions");
