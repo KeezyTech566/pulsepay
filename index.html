@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulsePay - Modern Payment Solution</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-bolt-lightning"></i>
+                <h2>PulsePay</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard-section"><i class="fa-solid fa-house"></i> Dashboard</li>
+                <li data-target="send-section"><i class="fa-solid fa-paper-plane"></i> Send Money</li>
+                <li data-target="transactions-section"><i class="fa-solid fa-wallet"></i> Transactions</li>
+                <li data-target="settings-section"><i class="fa-solid fa-gear"></i> Settings</li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>Logged in as <br><strong>John (Analyst)</strong></p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p>Welcome back, manage your cash flow seamlessly.</p>
+                </div>
+                <div class="user-profile">
+                    <i class="fa-regular fa-bell notification-icon"></i>
+                    <div class="avatar">JO</div>
+                </div>
+            </header>
+
+            <!-- SECTION: Dashboard -->
+            <section id="dashboard-section" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <p>Total Balance</p>
+                        <h2 id="total-balance">$24,580.50</h2>
+                        <span class="badge positive">+12.4% this month</span>
+                    </div>
+                    <div class="stat-card">
+                        <p>Incoming (This Week)</p>
+                        <h2 id="incoming-amount">$4,250.00</h2>
+                        <span class="badge positive">+4 transactions</span>
+                    </div>
+                    <div class="stat-card">
+                        <p>Outgoing (This Week)</p>
+                        <h2 id="outgoing-amount">$1,120.00</h2>
+                        <span class="badge negative">-2 transactions</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card quick-action-card">
+                        <h3>Quick Transfer</h3>
+                        <form id="quick-transfer-form">
+                            <div class="form-group">
+                                <label>Recipient Email or ID</label>
+                                <input type="text" id="quick-recipient" placeholder="name@domain.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount ($)</label>
+                                <input type="number" id="quick-amount" placeholder="0.00" step="0.01" required>
+                            </div>
+                            <button type="submit" class="btn-primary">Pay Now</button>
+                        </form>
+                    </div>
+
+                    <div class="card recent-activity-card">
+                        <h3>Recent Pulse Activity</h3>
+                        <ul id="mini-transaction-list" class="mini-list">
+                            <!-- Populated dynamically via app.js -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: Send Money -->
+            <section id="send-section" class="content-section">
+                <div class="card form-card">
+                    <h3>Make a Secure Payment</h3>
+                    <p class="sub-text">Transfer funds instantly to any bank account or PulsePay user worldwide.</p>
+                    <form id="send-money-form">
+                        <div class="form-group">
+                            <label>Recipient Name / Business</label>
+                            <input type="text" id="send-name" placeholder="e.g. Acme Corp" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Destination Account / Identifier</label>
+                            <input type="text" id="send-account" placeholder="Account Number or Email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount ($)</label>
+                            <input type="number" id="send-amount" placeholder="50.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Reference Note</label>
+                            <input type="text" id="send-note" placeholder="What is this for? (optional)">
+                        </div>
+                        <button type="submit" class="btn-primary">Authorize Transfer</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION: Transactions History -->
+            <section id="transactions-section" class="content-section">
+                <div class="card table-card">
+                    <div class="table-header">
+                        <h3>All Transactions</h3>
+                        <input type="text" id="search-transactions" placeholder="Search history...">
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                Ref ID
+                                <th>Receiver / Sender</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </thead>
+                            <tbody id="full-transaction-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: Settings -->
+            <section id="settings-section" class="content-section">
+                <div class="card">
+                    <h3>Gateway Configuration</h3>
+                    <p class="sub-text">Manage your secure API keys and webhook integrations.</p>
+                    <div class="settings-group">
+                        <label>Live API Key</label>
+                        <div class="api-key-box">
+                            <input type="password" value="pp_live_99x87f65d433210abcd" readonly id="api-key">
+                            <button class="btn-secondary" id="copy-key-btn">Copy</button>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <label>Webhook URL (Power Automate / Endpoint)</label>
+                        <input type="text" value="https://prod-hook.pulsepay.io/api/v1/webhook" readonly>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
