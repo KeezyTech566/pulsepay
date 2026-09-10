@@ -1,18 +1,86 @@
 let state = {
+    currentUser: null,
+    currentCurrency: 'USD',
+    currencySymbols: {
+        'USD': '$', 'EUR': '€', 'GBP': '£', 'NGN': '₦', 
+        'JPY': '¥', 'CAD': 'CA$', 'AUD': 'AU$', 'INR': '₹'
+    },
     balance: 24580.50,
     incoming: 4250.00,
     outgoing: 1120.00,
     transactions: []
 };
 
+// Get current symbol helper
+function getSymbol() {
+    return state.currencySymbols[state.currentCurrency] || '$';
+}
+
+// Example helper to format any amount with the active currency symbol
+function formatMoney(amount) {
+    return `${getSymbol()}${amount.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+}
+
 let cashFlowChart = null;
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+    const savedUser = localStorage.getItem("pulsepay_user");
+    if (savedUser) {
+        state.currentUser = savedUser;
+        startApp();
+    } else {
+        showScreen('onboarding-screen');
+    }
+    setupAuthForms();
     initNavigation();
-    await fetchTransactions();
     setupForms();
     initChart();
 });
+
+function showScreen(screenId) {
+    document.getElementById('onboarding-screen').style.display = 'none';
+    document.getElementById('signup-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById(screenId).style.display = 'block';
+}
+
+function setupAuthForms() {
+    document.getElementById('signup-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('signup-name').value;
+        localStorage.setItem("pulsepay_user", name);
+        state.currentUser = name;
+        startApp();
+    });
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const name = email.split('@')[0];
+        localStorage.setItem("pulsepay_user", name);
+        state.currentUser = name;
+        startApp();
+    });
+}
+
+function startApp() {
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('app-dashboard').style.display = 'flex';
+    document.getElementById('user-display-name').innerText = state.currentUser;
+    document.getElementById('user-avatar-initials').innerText = state.currentUser.substring(0, 2).toUpperCase();
+    fetchTransactions();
+}
+
+function logout() {
+    localStorage.removeItem("pulsepay_user");
+    location.reload();
+}
+
+function changeCurrency(val) {
+    state.currentCurrency = val;
+    renderDashboard();
+    renderTransactions();
+}
 
 // Fetch from Flask Backend API
 async function fetchTransactions() {
@@ -28,6 +96,7 @@ async function fetchTransactions() {
         }
     } catch (err) {
         console.warn("Backend offline, using local memory state.");
+        seedInitialData();
     }
     renderDashboard();
     renderTransactions();
@@ -35,8 +104,8 @@ async function fetchTransactions() {
 
 function seedInitialData() {
     state.transactions = [
-        { id: "TXN-9842", name: "Stripe Payout", amount: 1500.00, type: "incoming", date: "Sep 09, 2026" },
-        { id: "TXN-9841", name: "AWS Cloud Services", amount: 120.00, type: "outgoing", date: "Sep 08, 2026" }
+        { id: "TXN-9842", name: "Stripe Payout", amount: 1500.00, currency: "USD", type: "incoming", date: "Sep 09, 2026" },
+        { id: "TXN-9841", name: "AWS Cloud Services", amount: 120.00, currency: "USD", type: "outgoing", date: "Sep 08, 2026" }
     ];
 }
 
@@ -52,7 +121,7 @@ function initChart() {
         data: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [{
-                label: 'Transaction Volume ($)',
+                label: 'Transaction Volume',
                 data: [1200, 2100, 800, 1500, 4250, 1120, 3100],
                 backgroundColor: '#6366f1',
                 borderRadius: 6
@@ -82,18 +151,19 @@ function initNavigation() {
 }
 
 function renderDashboard() {
-    document.getElementById("total-balance").innerText = `$${state.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById("total-balance").innerText = formatMoney(state.balance);
     const miniList = document.getElementById("mini-transaction-list");
     miniList.innerHTML = "";
 
     state.transactions.slice(0, 4).forEach(tx => {
         const isIncoming = tx.type === "incoming";
+        const txSymbol = state.currencySymbols[tx.currency] || getSymbol();
         const li = document.createElement("li");
         li.className = "mini-item";
         li.innerHTML = `
             <div class="mini-item-info"><strong>${tx.name}</strong><span>${tx.date}</span></div>
             <strong style="color: ${isIncoming ? 'var(--success)' : 'var(--danger)'}">
-                ${isIncoming ? '+' : '-'}$${tx.amount.toFixed(2)}
+                ${isIncoming ? '+' : '-'}${txSymbol}${tx.amount.toFixed(2)}
             </strong>`;
         miniList.appendChild(li);
     });
@@ -104,12 +174,13 @@ function renderTransactions(filterText = "") {
     tbody.innerHTML = "";
     state.transactions.filter(tx => tx.name.toLowerCase().includes(filterText.toLowerCase())).forEach(tx => {
         const isIncoming = tx.type === "incoming";
+        const txSymbol = state.currencySymbols[tx.currency] || getSymbol();
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><code>${tx.id}</code></td>
             <td>${tx.name}</td>
             <td style="color: ${isIncoming ? 'var(--success)' : 'var(--danger)'}; font-weight:600;">
-                ${isIncoming ? '+' : '-'}$${tx.amount.toFixed(2)}
+                ${isIncoming ? '+' : '-'}${txSymbol}${tx.amount.toFixed(2)}
             </td>
             <td><span class="badge ${isIncoming ? 'positive' : 'negative'}">Successful</span></td>
             <td>${tx.date}</td>`;
@@ -126,6 +197,7 @@ function setupForms() {
             id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
             name: name,
             amount: amount,
+            currency: state.currentCurrency,
             type: "outgoing",
             date: "Today"
         };
@@ -141,7 +213,7 @@ function setupForms() {
         recalculateMetrics();
         renderDashboard();
         renderTransactions();
-        alert(`Payment of $${amount.toFixed(2)} processed successfully!`);
+        alert(`Payment of ${formatMoney(amount)} processed successfully!`);
     };
 
     document.getElementById("quick-transfer-form").addEventListener("submit", (e) => {
@@ -149,4 +221,31 @@ function setupForms() {
         handleTransfer(document.getElementById("quick-recipient").value, document.getElementById("quick-amount").value);
         e.target.reset();
     });
+
+    document.getElementById("send-money-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        handleTransfer(document.getElementById("send-name").value, document.getElementById("send-amount").value);
+        e.target.reset();
+    });
+
+    // Search filter handling
+    const searchInput = document.getElementById("search-transactions");
+    if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+            renderTransactions(e.target.value);
+        });
+    }
+
+    // Copy API key utility
+    const copyBtn = document.getElementById("copy-key-btn");
+    if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+            const apiKeyInput = document.getElementById("api-key");
+            apiKeyInput.type = "text";
+            apiKeyInput.select();
+            document.execCommand("copy");
+            apiKeyInput.type = "password";
+            alert("API Key copied to clipboard!");
+        });
+    }
 }
