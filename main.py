@@ -27,6 +27,7 @@ def init_db():
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 amount REAL NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'USD',
                 type TEXT NOT NULL,
                 date TEXT NOT NULL
             )
@@ -48,8 +49,8 @@ def add_transaction():
     db = get_db()
     try:
         db.execute(
-            'INSERT INTO transactions (id, name, amount, type, date) VALUES (?, ?, ?, ?, ?)',
-            (data['id'], data['name'], data['amount'], data['type'], data['date'])
+            'INSERT INTO transactions (id, name, amount, currency, type, date) VALUES (?, ?, ?, ?, ?, ?)',
+            (data['id'], data['name'], data['amount'], data.get('currency', 'USD'), data['type'], data['date'])
         )
         db.commit()
         return jsonify({"status": "success", "transaction": data}), 201
